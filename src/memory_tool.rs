@@ -1,12 +1,8 @@
-
-use std::ffi::c_long;
-use std::os::windows::fs::OpenOptionsExt;
+use libc::{c_int, c_void, lseek64, off_t, open, read, O_RDWR, SEEK_SET};
+use std::ffi::{c_long, CString};
+use std::process;
 use std::process::Command;
-use std::fs::OpenOptions;
-use libc::{c_void, off_t, O_RDWR};
-extern "C" {
-    fn pread(fd: i32, buf: *mut c_void, count: usize, offset: off_t) -> isize;
-}
+
 pub fn get_pid(package_name: &str) -> Option<String> {
     let output = Command::new("sh")
         .arg("-c")
@@ -64,20 +60,37 @@ pub fn get_so_head(pid: &str, so_name: &str) -> Option<Vec<(String, String)>> {
     }
 }
 
-pub fn read_point(addr: c_long) -> c_long {
-    let path = format!("/proc/{}/mem", addr);
-    let mut result;
-    let mem_file = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .custom_flags(O_RDWR as u32)
-        .open(path);
-    unsafe {
-        pread(
-            mem_file.as_raw_fd(),
-            buf.as_mut_ptr() as *mut c_void,
-            buf.len(),
-            offset
-        )
+pub fn read_point(pid: c_long, addr: c_long) -> c_int {
+    let mut val: c_int = 0;
+
+    // 1. 打开进程内存文件
+    let path = CString::new(format!("/proc/{}/mem", pid)).expect("CString::new failed");
+    let mem_file = unsafe { open(path.as_ptr(), O_RDWR) };
+
+    // 检查文件描述符是否有效
+    if mem_file == -1 {
+        eprintln!("Failed to open /proc/{}/mem", pid);
+        process::exit(1);
     }
+
+    // 2. 读取内存
+    unsafe {
+        if lseek64(mem_file, addr as i64, SEEK_SET) == -1 {
+            eprintln!("Failed to seek to address 0x{:x}", addr);
+            process::exit(1);
+        }
+
+        let bytes_read = read(
+            mem_file,
+            &mut val as *mut c_int as *mut c_void,
+            size_of::<c_int>(),
+        );
+
+        if bytes_read != size_of::<c_int>() as isize {
+            eprintln!("Failed to read memory at 0x{:x}", addr);
+            process::exit(1);
+        }
+    }
+
+    val
 }
