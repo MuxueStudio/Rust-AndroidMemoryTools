@@ -1,7 +1,13 @@
-use libc::{c_int, c_void, lseek64, off_t, open, read, O_RDWR, SEEK_SET};
+use libc::{c_double, c_float, c_int, c_short, c_void, off64_t, pread64, O_RDONLY};
 use std::ffi::{c_long, CString};
-use std::process;
+use std::mem::MaybeUninit;
 use std::process::Command;
+
+pub type DWORD = c_int;
+pub type FLOAT = c_float;
+pub type WORD = c_short;
+pub type DOUBLE = c_double;
+pub type QWORD = c_long;
 
 pub fn get_pid(package_name: &str) -> Option<String> {
     let output = Command::new("sh")
@@ -60,37 +66,30 @@ pub fn get_so_head(pid: &str, so_name: &str) -> Option<Vec<(String, String)>> {
     }
 }
 
-pub fn read_point(pid: c_long, addr: c_long) -> c_int {
-    let mut val: c_int = 0;
-
-    // 1. 打开进程内存文件
-    let path = CString::new(format!("/proc/{}/mem", pid)).expect("CString::new failed");
-    let mem_file = unsafe { open(path.as_ptr(), O_RDWR) };
-
-    // 检查文件描述符是否有效
-    if mem_file == -1 {
-        eprintln!("Failed to open /proc/{}/mem", pid);
-        process::exit(1);
+pub unsafe fn read_val<T>(pid: i32, addr: off64_t) -> T{
+    // 1. 打开内存文件
+    let path = CString::new(format!("/proc/{}/mem", pid)).unwrap();
+    let fd = libc::open(path.as_ptr(), O_RDONLY);
+    if fd == -1 {
+         panic!("{}",format!("open failed: {}", std::io::Error::last_os_error()));
     }
+    // 2. 使用pread64读取
+    let mut val = MaybeUninit::<T>::uninit();
+    let bytes_read = pread64(
+        fd,
+        val.as_mut_ptr() as *mut c_void,
+        size_of::<T>(),
+        addr
+    );
 
-    // 2. 读取内存
-    unsafe {
-        if lseek64(mem_file, addr as i64, SEEK_SET) == -1 {
-            eprintln!("Failed to seek to address 0x{:x}", addr);
-            process::exit(1);
-        }
+    libc::close(fd); // 记得关闭文件描述符
 
-        let bytes_read = read(
-            mem_file,
-            &mut val as *mut c_int as *mut c_void,
-            size_of::<c_int>(),
-        );
-
-        if bytes_read != size_of::<c_int>() as isize {
-            eprintln!("Failed to read memory at 0x{:x}", addr);
-            process::exit(1);
-        }
+    // 3. 检查结果
+    if bytes_read == -1 {
+        panic!("{}",format!("pread64 failed at {:#x}: {}", addr, std::io::Error::last_os_error()))
+    } else if bytes_read != size_of::<T>() as isize {
+        panic!("{}",format!("Incomplete read at {:#x}", addr))
+    } else {
+        val.assume_init()
     }
-
-    val
 }
