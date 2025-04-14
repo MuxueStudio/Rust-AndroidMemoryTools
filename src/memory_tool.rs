@@ -135,17 +135,17 @@ pub unsafe fn rpoint(pid: &str, address: c_long) -> c_long {
 }
 pub unsafe fn read_point(pid: &str, address: off64_t, offsets: &[off64_t]) -> c_long {
     //报错就是没有这个地址，可以拿gg偏移测试，该函数u没问题，明天写个异常处理
-    println!("address:{:#x}", address);
+    // println!("address:{:#x}", address);
     let mut p1 = rpoint(pid, address); //point addr is true
-    println!("{:#x}", p1);
+    // println!("{:#x}", p1);
     let size = offsets.len();
-    println!("size:{}", size);
+    // println!("size:{}", size);
     for i in 0..size - 1 {
-        println!("i: {} p1:{:#x} offsets:{:#x}", i, p1, offsets[i]);
+        // println!("i: {} p1:{:#x} offsets:{:#x}", i, p1, offsets[i]);
         p1 = rpoint(pid, p1 + offsets[i]);
-        println!("new p1:{:#x}", p1);
+        // println!("new p1:{:#x}", p1);
     }
-    println!("p1:{:#x} offsets:{:#x}", p1, offsets[size - 1]);
+    // println!("p1:{:#x} offsets:{:#x}", p1, offsets[size - 1]);
     p1 + offsets[size - 1]
     // 0
 }
