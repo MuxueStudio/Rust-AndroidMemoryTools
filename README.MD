@@ -9,7 +9,10 @@ NDK版本：android-ndk-r25b
  bash /buildscript/build_all.sh
 ```
 # 方法介绍
-
+获取帮助:沐雪社区:https://www.muxue.pro
+视频教程:https://v.douyin.com/I-xKYusrX5M/
+哔哩哔哩:https://space.bilibili.com/3546693165386233
+抖音:
 ```rust
 // 获取指定包名的进程id
 get_pid(package_name)
