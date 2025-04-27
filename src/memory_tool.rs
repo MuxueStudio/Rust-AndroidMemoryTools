@@ -31,9 +31,6 @@ pub fn get_pid(package_name: &str) -> Option<String> {
         Some(pid)
     }
 }
-
-// libil2cpp.so
-
 pub fn get_so_head(pid: &str, so_name: &str) -> Option<HashMap<String, off64_t>> {
     let output = Command::new("sh")
         .arg("-c")
@@ -73,7 +70,6 @@ pub fn get_so_head(pid: &str, so_name: &str) -> Option<HashMap<String, off64_t>>
         Some(result)
     }
 }
-
 pub unsafe fn read_val<T>(pid: &str, addr: off64_t) -> T {
     // 1. 打开内存文件
     let path = CString::new(format!("/proc/{}/mem", pid)).unwrap();
@@ -134,22 +130,13 @@ pub unsafe fn rpoint(pid: &str, address: c_long) -> c_long {
     val as i64
 }
 pub unsafe fn read_point(pid: &str, address: off64_t, offsets: &[off64_t]) -> c_long {
-    //报错就是没有这个地址，可以拿gg偏移测试，该函数u没问题，明天写个异常处理
-    // println!("address:{:#x}", address);
     let mut p1 = rpoint(pid, address); //point addr is true
-    // println!("{:#x}", p1);
     let size = offsets.len();
-    // println!("size:{}", size);
     for i in 0..size - 1 {
-        // println!("i: {} p1:{:#x} offsets:{:#x}", i, p1, offsets[i]);
         p1 = rpoint(pid, p1 + offsets[i]);
-        // println!("new p1:{:#x}", p1);
     }
-    // println!("p1:{:#x} offsets:{:#x}", p1, offsets[size - 1]);
     p1 + offsets[size - 1]
-    // 0
 }
-
 pub unsafe fn write_val<T>(pid: &str, address: off64_t, val: T) {
     let path = CString::new(format!("/proc/{}/mem", pid)).unwrap();
     let fd = libc::open(path.as_ptr(), libc::O_RDWR);

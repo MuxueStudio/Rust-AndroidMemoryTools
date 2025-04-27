@@ -11,9 +11,9 @@ fn main() {
         println!("地址{:#x}", addr);
         write_val::<DWORD>(&pid, addr, 7777);
         println!("第一次读取DWORD：{}", read_val::<DWORD>(&pid, addr));
-        write_val::<DWORD>(&pid, addr, 6666);
-        println!("第二次读取DWORD：{}", read_val::<DWORD>(&pid, addr));
-        write_val::<FLOAT>(&pid, addr, 666.2);
-        println!("第一次读取FLOAT：{}", read_val::<FLOAT>(&pid, addr));
+        // write_val::<DWORD>(&pid, addr, 6666);
+        // println!("第二次读取DWORD：{}", read_val::<DWORD>(&pid, addr));
+        // write_val::<FLOAT>(&pid, addr, 666.2);
+        // println!("第一次读取FLOAT：{}", read_val::<FLOAT>(&pid, addr));
     }
 }

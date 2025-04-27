@@ -3,9 +3,4 @@ name = "AndroidMemoryTools"
 version = "0.1.0"
 edition = "2021"
 [dependencies]
-libc = "0.2.171"
-[target.'cfg(unix)'.dependencies]
-libc = "0.2"
-
-[target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = ["handleapi"] }
+libc = "1.0.0-alpha.1"
